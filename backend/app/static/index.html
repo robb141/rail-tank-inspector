@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#146c5c">
+    <title>Rail Inspect</title>
+    <link rel="manifest" href="/static/manifest.webmanifest">
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Rail Inspect</h1>
+        <p>Prvotný záznam Z a osvedčenie o skúške Z</p>
+      </div>
+      <div class="status" id="apiStatus">Kontrola spojenia...</div>
+    </header>
+
+    <main class="layout">
+      <form id="inspectionForm" class="panel">
+        <section>
+          <h2>Identifikácia</h2>
+          <div class="grid">
+            <label>
+              Číslo osvedčenia
+              <input name="certificate_number" required value="Z-2026-0001">
+            </label>
+            <label>
+              Označenie cisterny
+              <input name="tank_identification" required value="33 56 7920 123-4">
+            </label>
+            <label>
+              Miesto skúšky
+              <input name="inspection_place" required value="Bratislava">
+            </label>
+            <label>
+              Dátum skúšky
+              <input name="inspection_date" type="date" required value="2026-05-08">
+            </label>
+            <label>
+              Inšpektor
+              <input name="inspector_name" required value="Ing. Ján Kontrolór">
+            </label>
+            <label>
+              Výsledok
+              <select name="result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Držiteľ</h2>
+          <div class="grid">
+            <label>
+              Držiteľ
+              <input name="holder_name" required value="Rail Tank Services s.r.o.">
+            </label>
+            <label>
+              Ulica
+              <input name="holder_street" value="Mikovíniho 19">
+            </label>
+            <label>
+              PSČ
+              <input name="holder_postal_code" value="917 02">
+            </label>
+            <label>
+              Mesto
+              <input name="holder_city" value="Trnava">
+            </label>
+            <label>
+              Štát
+              <input name="holder_country" value="Slovenská republika">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Cisterna</h2>
+          <div class="grid">
+            <label>
+              Číslo schválenia typu
+              <input name="type_approval_number" value="E1-ADR-12345">
+            </label>
+            <label>
+              Výrobca kotla
+              <input name="tank_manufacturer_name" value="Tatra Vagónka">
+            </label>
+            <label>
+              Číslo kotla
+              <input name="tank_serial_number" value="KOT-98765">
+            </label>
+            <label>
+              Rok výroby
+              <input name="year_of_manufacture" type="number" min="1000" max="2100" value="2018">
+            </label>
+            <label>
+              Tankcode
+              <input name="tank_code" value="L4BH">
+            </label>
+            <label>
+              Objem v litroch
+              <input name="capacity_liters" type="number" min="0" value="85000">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Tlaky a ventily</h2>
+          <div class="grid">
+            <label>
+              Skúšobný tlak
+              <input name="test_pressure" value="4">
+            </label>
+            <label>
+              Pracovný tlak
+              <input name="working_pressure" value="3">
+            </label>
+            <label>
+              Výpočtový tlak
+              <input name="calculation_pressure" value="4.5">
+            </label>
+            <label>
+              Pretlak poistného ventilu
+              <input name="safety_valve_pressure" value="3.3">
+            </label>
+            <label>
+              Podtlak poistného ventilu
+              <input name="vacuum_valve_pressure" value="-0.21">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Poznámky</h2>
+          <div class="grid">
+            <label>
+              Ložný tovar
+              <textarea name="cargo_substances">UN 1202, motorová nafta</textarea>
+            </label>
+            <label>
+              Zvláštne ustanovenia
+              <textarea name="special_provisions">TU15, TE22</textarea>
+            </label>
+            <label>
+              Orazenie štítka
+              <input name="tank_plate_stamp" value="Z 05/2026">
+            </label>
+            <label>
+              Budúca skúška
+              <input name="next_inspection" value="05/2029">
+            </label>
+            <label class="wide">
+              Poznámky
+              <textarea name="remarks">Bez zistených nedostatkov.</textarea>
+            </label>
+          </div>
+        </section>
+
+        <div class="actions">
+          <span class="draft-status" id="draftStatus">Koncept pripravený</span>
+          <button type="submit">Vygenerovať dokumenty</button>
+          <button type="button" class="secondary" id="clearDraft">Vymazať koncept</button>
+          <button type="button" class="secondary" id="resetSample">Obnoviť vzor</button>
+        </div>
+      </form>
+
+      <aside class="side">
+        <section class="panel">
+          <h2>Výsledok</h2>
+          <div id="resultBox" class="result muted">Dokumenty sa zobrazia po odoslaní formulára.</div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <h2>Offline fronta</h2>
+            <button type="button" class="small secondary" id="syncQueue">Synchronizovať</button>
+          </div>
+          <div id="queueList" class="recent muted">Načítavam...</div>
+        </section>
+
+        <section class="panel">
+          <h2>Posledné záznamy</h2>
+          <div id="recentList" class="recent muted">Načítavam...</div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
