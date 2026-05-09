@@ -53,7 +53,20 @@ def set_cell_text(cell: ET.Element, text: str) -> None:
 
     for index, line in enumerate(text.splitlines()):
         paragraph = ET.SubElement(cell, w("p"))
+        paragraph_properties = ET.SubElement(paragraph, w("pPr"))
+        spacing = ET.SubElement(paragraph_properties, w("spacing"))
+        spacing.set(w("before"), "0")
+        spacing.set(w("after"), "0")
+        spacing.set(w("line"), "220")
+        spacing.set(w("lineRule"), "auto")
+
         run = ET.SubElement(paragraph, w("r"))
+        run_properties = ET.SubElement(run, w("rPr"))
+        size = ET.SubElement(run_properties, w("sz"))
+        size.set(w("val"), "18")
+        size_complex = ET.SubElement(run_properties, w("szCs"))
+        size_complex.set(w("val"), "18")
+
         text_node = ET.SubElement(run, w("t"))
         if line.startswith(" ") or line.endswith(" "):
             text_node.set(f"{{{XML_NS}}}space", "preserve")
@@ -128,27 +141,80 @@ def update_initial_record(root: ET.Element) -> None:
     duplicated_form_values = {
         1: "Označenie cisterny\n(č. vozňa): {{ tank_identification }}",
         3: "Miesto skúšky: {{ inspection_place }}    Dátum skúšky: {{ inspection_date }}",
+        4: "č. zákazky / č. objednávky: {{ order_number }}",
         5: "Poradové číslo / číslo certifikátu: {{ certificate_number }}",
         7: "Číslo kotla: {{ tank_serial_number }}    Rok výroby: {{ year_of_manufacture }}",
         8: "Číslo schválenia typu: {{ type_approval_number }}",
         9: "Názov výrobcu kotla: {{ tank_manufacturer_name }}",
         10: "Objem v litroch: {{ capacity_liters }}    Držiteľ: {{ holder_name }}",
-        14: "Tankcode: {{ tank_code }}    Aktuálna skúška: {{ result }}",
+        11: "Dátum a druh poslednej skúšky: {{ last_inspection_date_type }}",
+        14: "Tankcode: {{ tank_code }}    Aktuálna skúška: {{ current_inspection_type_label }}",
         15: "Ložný tovar: {{ cargo_substances }}",
         17: "Prac. tlak: {{ working_pressure }} bar",
         18: "Skúšobný tlak: {{ test_pressure }} bar",
         19: "Výpočtový tlak: {{ calculation_pressure }} bar",
+        20: "Aktual. skúš. tlak: {{ current_test_pressure }} bar",
+        22: "Vonk. prehliadka: {{ external_inspection_result_label }}    Vnút. prehliadka: {{ internal_inspection_result_label }}",
+        23: "Kontr. zvarov: {{ weld_inspection_result_label }}    Kontr. štítkov: {{ plate_inspection_result_label }}",
+        24: "Preh. vykur. hadov: vonk. {{ heating_coils_external_result_label }}    vnút. {{ heating_coils_internal_result_label }}",
+        25: "Bočné (výpus.) ventily: I.str. {{ side_valves_side_1_result_label }}    II.str. {{ side_valves_side_2_result_label }}",
+        26: "Stredový ventil: {{ center_valve_result_label }}",
+        27: "veko + tesnenie: {{ lid_gasket_result_label }}",
+        28: "Typ poist. ventilu: {{ safety_valve_type }}    č. PV: {{ safety_valve_number }}",
         29: "pretlak: {{ safety_valve_pressure }}    podtlak: {{ vacuum_valve_pressure }}",
+        31: "Uzemnenie: {{ grounding_result_label }}",
+        32: "Protokol UTT: {{ utt_protocol_number }}    Protokol gum.: {{ rubber_protocol_number }}",
+        33: "Nameraná min. hrúbka kotla:",
         36: "Orazenie štítka: {{ tank_plate_stamp }}",
         37: "Budúca skúška: {{ next_inspection }}",
         38: "Zvláštne ustanovenia: {{ special_provisions }}",
-        41: "Poznámky:\n{{ remarks }}\nDôvod mimoriadnej kontroly:",
+        39: "č. mer. + kal. do: {{ measuring_device_number }} / {{ calibration_valid_until }}",
+        40: "Čas trvania skúšky: {{ test_duration }}",
+        41: "Poznámky:\n{{ remarks }}\nDôvod mimoriadnej kontroly: {{ extraordinary_inspection_reason }}",
     }
 
     for row_number, value in duplicated_form_values.items():
         row_cells = cells(rows(main_table)[row_number - 1])
         set_cell_text(row_cells[0], value)
         set_cell_text(row_cells[-1], value)
+
+    row_12_cells = cells(rows(main_table)[11])
+    set_cell_text(row_12_cells[0], "P: {{ periodic_inspection_date }}")
+    set_cell_text(row_12_cells[1], "L: {{ intermediate_inspection_date }}")
+    set_cell_text(row_12_cells[2], "P: {{ periodic_inspection_date }}")
+    set_cell_text(row_12_cells[3], "L: {{ intermediate_inspection_date }}")
+
+    row_34_cells = cells(rows(main_table)[33])
+    set_cell_text(row_34_cells[0], "čelá: {{ measured_wall_thickness_front_mm }} mm")
+    set_cell_text(row_34_cells[1], "luby: {{ measured_wall_thickness_shell_mm }} mm")
+    set_cell_text(row_34_cells[2], "čelá: {{ measured_wall_thickness_front_mm }} mm")
+    set_cell_text(row_34_cells[3], "luby: {{ measured_wall_thickness_shell_mm }} mm")
+
+    for table in tables(root)[1:]:
+        for row in rows(table):
+            row_cells = cells(row)
+            if not row_cells:
+                continue
+            text = cell_text(row_cells[0])
+            if "Vlastníka zariadenia" in text:
+                value = "Vlastníka zariadenia: {{ supplier_device_owner }}"
+            elif "Druh zariadenia" in text:
+                value = "Druh zariadenia: {{ supplier_device_type }}"
+            elif "Výrobné číslo zariadenia" in text:
+                value = "Výrobné číslo zariadenia: {{ supplier_device_serial_number }}"
+            elif "Platnosť kalibrácie" in text:
+                value = "Platnosť kalibrácie: {{ supplier_calibration_validity }}"
+            elif "Názov spoločnosti" in text:
+                value = "Názov spoločnosti, ktorá vykonala kalibráciu: {{ supplier_calibration_company }}"
+            elif "Registračné číslo SNAS" in text:
+                value = "Registračné číslo SNAS: {{ supplier_snas_registration_number }}"
+            elif "Iné zistenia" in text:
+                value = "Iné zistenia:\n{{ supplier_other_findings }}"
+            else:
+                continue
+
+            set_cell_text(row_cells[0], value)
+            set_cell_text(row_cells[-1], value)
 
 
 def main() -> None:
