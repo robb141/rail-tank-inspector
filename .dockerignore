@@ -1,0 +1,11 @@
+.git
+.DS_Store
+__pycache__/
+*.py[cod]
+
+backend/.venv/
+backend/.venv-*/
+backend/data/*.sqlite3
+backend/data/json/*.json
+backend/data/generated/*.docx
+backend/data/generated/*.pdf
