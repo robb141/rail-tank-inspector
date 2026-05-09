@@ -1,0 +1,13 @@
+services:
+  rail-inspect:
+    build:
+      context: ./backend
+    container_name: rail-inspect
+    ports:
+      - "8000:8000"
+    environment:
+      RAIL_INSPECT_DATA_DIR: /app/data
+      LIBREOFFICE_PATH: /usr/bin/libreoffice
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
