@@ -7,7 +7,7 @@
     <title>Rail Inspect</title>
     <link rel="manifest" href="/static/manifest.webmanifest">
     <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=15">
   </head>
   <body>
     <header class="topbar">
@@ -48,6 +48,19 @@
               <select name="result">
                 <option value="pass" selected>Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+            <label>
+              Č. zákazky / objednávky
+              <input name="order_number" value="">
+            </label>
+            <label>
+              Aktuálna skúška
+              <select name="current_inspection_type">
+                <option value="periodic" selected>Periodická P</option>
+                <option value="intermediate">Medzikontrola L</option>
+                <option value="initial">Východisková</option>
+                <option value="exceptional">Mimoriadna</option>
               </select>
             </label>
           </div>
@@ -106,6 +119,18 @@
               Objem v litroch
               <input name="capacity_liters" type="number" min="0" value="85000">
             </label>
+            <label>
+              Dátum a druh poslednej skúšky
+              <input name="last_inspection_date_type" value="">
+            </label>
+            <label>
+              P
+              <input name="periodic_inspection_date" value="">
+            </label>
+            <label>
+              L
+              <input name="intermediate_inspection_date" value="">
+            </label>
           </div>
         </section>
 
@@ -125,12 +150,152 @@
               <input name="calculation_pressure" value="4.5">
             </label>
             <label>
+              Aktuálny skúšobný tlak
+              <input name="current_test_pressure" value="4">
+            </label>
+            <label>
               Pretlak poistného ventilu
               <input name="safety_valve_pressure" value="3.3">
             </label>
             <label>
               Podtlak poistného ventilu
               <input name="vacuum_valve_pressure" value="-0.21">
+            </label>
+            <label>
+              Typ poistného ventilu
+              <input name="safety_valve_type" value="">
+            </label>
+            <label>
+              Číslo PV
+              <input name="safety_valve_number" value="">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Kontroly</h2>
+          <div class="grid compact-grid">
+            <label>
+              Vonkajšia prehliadka
+              <select name="external_inspection_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Vnútorná prehliadka
+              <select name="internal_inspection_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Kontrola zvarov
+              <select name="weld_inspection_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Kontrola štítkov
+              <select name="plate_inspection_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Vykurovacie hady vonk.
+              <select name="heating_coils_external_result">
+                <option value="not_applicable" selected>Nevzťahuje sa</option>
+                <option value="pass">Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+            <label>
+              Vykurovacie hady vnút.
+              <select name="heating_coils_internal_result">
+                <option value="not_applicable" selected>Nevzťahuje sa</option>
+                <option value="pass">Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+            <label>
+              Bočné ventily I. str.
+              <select name="side_valves_side_1_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Bočné ventily II. str.
+              <select name="side_valves_side_2_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Stredový ventil
+              <select name="center_valve_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Veko + tesnenie
+              <select name="lid_gasket_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+            <label>
+              Uzemnenie
+              <select name="grounding_result">
+                <option value="pass" selected>Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Protokoly a merania</h2>
+          <div class="grid">
+            <label>
+              Protokol UTT
+              <input name="utt_protocol_number" value="">
+            </label>
+            <label>
+              Protokol gum.
+              <input name="rubber_protocol_number" value="">
+            </label>
+            <label>
+              Min. hrúbka čelá mm
+              <input name="measured_wall_thickness_front_mm" inputmode="decimal" value="">
+            </label>
+            <label>
+              Min. hrúbka luby mm
+              <input name="measured_wall_thickness_shell_mm" inputmode="decimal" value="">
+            </label>
+            <label>
+              Č. mer. zariadenia
+              <input name="measuring_device_number" value="">
+            </label>
+            <label>
+              Kalibrácia do
+              <input name="calibration_valid_until" value="">
+            </label>
+            <label>
+              Čas trvania skúšky
+              <input name="test_duration" value="">
             </label>
           </div>
         </section>
@@ -158,14 +323,52 @@
               Poznámky
               <textarea name="remarks">Bez zistených nedostatkov.</textarea>
             </label>
+            <label class="wide">
+              Dôvod mimoriadnej kontroly
+              <textarea name="extraordinary_inspection_reason"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Spôsobilosť dodávateľa</h2>
+          <div class="grid">
+            <label>
+              Vlastník zariadenia
+              <input name="supplier_device_owner" value="">
+            </label>
+            <label>
+              Druh zariadenia
+              <input name="supplier_device_type" value="">
+            </label>
+            <label>
+              Výrobné číslo zariadenia
+              <input name="supplier_device_serial_number" value="">
+            </label>
+            <label>
+              Platnosť kalibrácie
+              <input name="supplier_calibration_validity" value="">
+            </label>
+            <label>
+              Kalibračná spoločnosť
+              <input name="supplier_calibration_company" value="">
+            </label>
+            <label>
+              Registračné číslo SNAS
+              <input name="supplier_snas_registration_number" value="">
+            </label>
+            <label class="wide">
+              Iné zistenia
+              <textarea name="supplier_other_findings"></textarea>
+            </label>
           </div>
         </section>
 
         <div class="actions">
           <span class="draft-status" id="draftStatus">Koncept pripravený</span>
-          <button type="submit">Vygenerovať dokumenty</button>
+          <button type="submit" id="submitInspection">Vygenerovať dokumenty</button>
+          <button type="button" class="secondary hidden" id="cancelEdit">Zrušiť úpravu</button>
           <button type="button" class="secondary" id="clearDraft">Vymazať koncept</button>
-          <button type="button" class="secondary" id="resetSample">Obnoviť vzor</button>
         </div>
       </form>
 
@@ -184,12 +387,46 @@
         </section>
 
         <section class="panel">
-          <h2>Posledné záznamy</h2>
+          <div class="section-head">
+            <h2>Posledné záznamy</h2>
+            <div class="section-actions">
+              <button type="button" class="small secondary" id="refreshRecent">Obnoviť</button>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <label>
+              Hľadať
+              <input id="recentSearch" type="search" placeholder="Číslo, cisterna, držiteľ...">
+            </label>
+            <label>
+              Výsledok
+              <select id="recentResultFilter">
+                <option value="">Všetky</option>
+                <option value="pass">Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+          </div>
+          <div id="recentCount" class="list-count">Načítavam...</div>
           <div id="recentList" class="recent muted">Načítavam...</div>
         </section>
       </aside>
     </main>
 
-    <script src="/static/app.js"></script>
+    <div class="detail-overlay hidden" id="inspectionDetail">
+      <section class="detail-panel">
+        <div class="detail-header">
+          <div>
+            <h2 id="detailTitle">Detail záznamu</h2>
+            <p id="detailSubtitle"></p>
+          </div>
+          <button type="button" class="small secondary" id="closeDetail">Zavrieť</button>
+        </div>
+        <div id="detailContent" class="detail-content"></div>
+        <div class="record-actions detail-actions" id="detailActions"></div>
+      </section>
+    </div>
+
+    <script src="/static/app.js?v=15"></script>
   </body>
 </html>

@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+
+.venv/
+.venv-*/
+data/*.sqlite3
+data/json/*.json
+data/generated/*.docx
+data/generated/*.pdf
