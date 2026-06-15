@@ -76,6 +76,69 @@ def set_cell_text(cell: ET.Element, text: str) -> None:
             ET.SubElement(run, w("br"))
 
 
+def ensure_child(parent: ET.Element, tag: str) -> ET.Element:
+    child = parent.find(f"w:{tag}", NS)
+    if child is None:
+        child = ET.Element(w(tag))
+        parent.insert(0, child)
+    return child
+
+
+def set_cell_width(cell: ET.Element, width: int, grid_span: int | None = None) -> None:
+    tc_properties = ensure_child(cell, "tcPr")
+    width_element = tc_properties.find("w:tcW", NS)
+    if width_element is None:
+        width_element = ET.SubElement(tc_properties, w("tcW"))
+    width_element.set(w("w"), str(width))
+    width_element.set(w("type"), "dxa")
+
+    grid_span_element = tc_properties.find("w:gridSpan", NS)
+    if grid_span is None or grid_span <= 1:
+        if grid_span_element is not None:
+            tc_properties.remove(grid_span_element)
+        return
+
+    if grid_span_element is None:
+        grid_span_element = ET.SubElement(tc_properties, w("gridSpan"))
+    grid_span_element.set(w("val"), str(grid_span))
+
+
+def set_table_grid(table: ET.Element, widths: list[int]) -> None:
+    table_grid = table.find("w:tblGrid", NS)
+    if table_grid is None:
+        table_grid = ET.Element(w("tblGrid"))
+        table.insert(0, table_grid)
+
+    for child in list(table_grid):
+        table_grid.remove(child)
+
+    for width in widths:
+        grid_column = ET.SubElement(table_grid, w("gridCol"))
+        grid_column.set(w("w"), str(width))
+
+
+def remove_cells_after(row: ET.Element, keep_count: int) -> None:
+    row_cells = cells(row)
+    for cell in row_cells[keep_count:]:
+        row.remove(cell)
+
+
+def collapse_duplicated_table_columns(table: ET.Element) -> None:
+    full_width = 10774
+    half_width = full_width // 2
+    set_table_grid(table, [half_width, full_width - half_width])
+
+    for row in rows(table):
+        row_cells = cells(row)
+        if len(row_cells) >= 4:
+            remove_cells_after(row, 2)
+            set_cell_width(cells(row)[0], half_width)
+            set_cell_width(cells(row)[1], full_width - half_width)
+        elif len(row_cells) >= 2:
+            remove_cells_after(row, 1)
+            set_cell_width(cells(row)[0], full_width, grid_span=2)
+
+
 def tables(root: ET.Element) -> list[ET.Element]:
     return root.findall(".//w:tbl", NS)
 
@@ -138,7 +201,7 @@ def update_certificate(root: ET.Element) -> None:
 
 def update_initial_record(root: ET.Element) -> None:
     main_table = tables(root)[0]
-    duplicated_form_values = {
+    form_values = {
         1: "Označenie cisterny\n(č. vozňa): {{ tank_identification }}",
         3: "Miesto skúšky: {{ inspection_place }}    Dátum skúšky: {{ inspection_date }}",
         4: "č. zákazky / č. objednávky: {{ order_number }}",
@@ -173,22 +236,20 @@ def update_initial_record(root: ET.Element) -> None:
         41: "Poznámky:\n{{ remarks }}\nDôvod mimoriadnej kontroly: {{ extraordinary_inspection_reason }}",
     }
 
-    for row_number, value in duplicated_form_values.items():
+    for table in tables(root):
+        collapse_duplicated_table_columns(table)
+
+    for row_number, value in form_values.items():
         row_cells = cells(rows(main_table)[row_number - 1])
         set_cell_text(row_cells[0], value)
-        set_cell_text(row_cells[-1], value)
 
     row_12_cells = cells(rows(main_table)[11])
     set_cell_text(row_12_cells[0], "P: {{ periodic_inspection_date }}")
     set_cell_text(row_12_cells[1], "L: {{ intermediate_inspection_date }}")
-    set_cell_text(row_12_cells[2], "P: {{ periodic_inspection_date }}")
-    set_cell_text(row_12_cells[3], "L: {{ intermediate_inspection_date }}")
 
     row_34_cells = cells(rows(main_table)[33])
     set_cell_text(row_34_cells[0], "čelá: {{ measured_wall_thickness_front_mm }} mm")
     set_cell_text(row_34_cells[1], "luby: {{ measured_wall_thickness_shell_mm }} mm")
-    set_cell_text(row_34_cells[2], "čelá: {{ measured_wall_thickness_front_mm }} mm")
-    set_cell_text(row_34_cells[3], "luby: {{ measured_wall_thickness_shell_mm }} mm")
 
     for table in tables(root)[1:]:
         for row in rows(table):
@@ -214,7 +275,6 @@ def update_initial_record(root: ET.Element) -> None:
                 continue
 
             set_cell_text(row_cells[0], value)
-            set_cell_text(row_cells[-1], value)
 
 
 def main() -> None:

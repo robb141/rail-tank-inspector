@@ -333,7 +333,8 @@ JSON archive.
 From Docker, run tests inside a one-off container:
 
 ```bash
-docker compose run --rm rail-inspect sh -c "pip install -r requirements-dev.txt && pytest"
+docker compose build
+docker compose run --rm rail-inspect sh -c "python -m pip install --user -r requirements-dev.txt && python -m pytest"
 ```
 
 ## Docker
@@ -455,3 +456,8 @@ Also back up the whole NAS data folder:
 1. Add a full inspection detail view.
 2. Improve DOCX/PDF layout after testing with real inspection data.
 3. Add basic access protection before real LAN/NAS use.
+
+
+
+<!-- TODO  -->
+

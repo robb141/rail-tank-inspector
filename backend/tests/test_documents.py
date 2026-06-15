@@ -1,4 +1,11 @@
+from zipfile import ZipFile
+from xml.etree import ElementTree as ET
+
 from app.models import Inspection
+
+
+WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+WORD_NAMESPACES = {"w": WORD_NS}
 
 
 def test_document_paths_use_readable_safe_filenames(isolated_modules, sample_payload):
@@ -28,3 +35,24 @@ def test_safe_filename_part_has_fallback(isolated_modules):
 
     assert documents.safe_filename_part(" / ") == "bez-cisla"
     assert documents.safe_filename_part("A/B 123") == "A-B-123"
+
+
+def test_initial_record_template_has_no_duplicated_row_columns(isolated_modules):
+    config = isolated_modules["app.config"]
+
+    with ZipFile(config.INITIAL_RECORD_TEMPLATE_PATH) as docx_file:
+        document_xml = docx_file.read("word/document.xml")
+
+    root = ET.fromstring(document_xml)
+    for table in root.findall(".//w:tbl", WORD_NAMESPACES):
+        for row in table.findall("./w:tr", WORD_NAMESPACES):
+            cell_texts = [
+                "".join(
+                    text_node.text or ""
+                    for text_node in cell.findall(".//w:t", WORD_NAMESPACES)
+                ).strip()
+                for cell in row.findall("./w:tc", WORD_NAMESPACES)
+            ]
+            non_empty_texts = [text for text in cell_texts if text]
+
+            assert len(non_empty_texts) == len(set(non_empty_texts))
