@@ -1089,7 +1089,16 @@ async function handleSyncClick() {
 syncQueue.addEventListener("click", handleSyncClick);
 syncStripButton.addEventListener("click", handleSyncClick);
 
-tabFormButton.addEventListener("click", () => showTab("form"));
+tabFormButton.addEventListener("click", async () => {
+  showTab("form");
+  form.reset();
+  ensureInspectionDateDefault();
+  setEditingInspection(null);
+  resultBox.className = "result muted hidden";
+  resultBox.textContent = "";
+  await clearSavedDraft();
+  draftStatus.textContent = "Nový záznam pripravený";
+});
 tabRecordsButton.addEventListener("click", () => showTab("records"));
 
 holderPicker.addEventListener("change", () => {
