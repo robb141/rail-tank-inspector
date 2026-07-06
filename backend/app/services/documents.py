@@ -72,7 +72,7 @@ def format_slovak_date(value: object) -> object:
         parsed = date.fromisoformat(str(value))
     except ValueError:
         return value
-    return f"{parsed.day}.{parsed.month}.{parsed.year}"
+    return parsed.strftime("%d.%m.%Y")
 
 
 def find_tank_type(inspection: Inspection) -> LookupTankType | None:
@@ -158,7 +158,7 @@ def build_certificate_context(inspection: Inspection) -> dict[str, object]:
     for field in pressure_fields:
         context[field] = without_bar(context.get(field))
 
-    for field in ("periodic_inspection_date", "intermediate_inspection_date"):
+    for field in ("inspection_date", "periodic_inspection_date", "intermediate_inspection_date"):
         context[field] = format_slovak_date(context.get(field))
 
     label_parts = []

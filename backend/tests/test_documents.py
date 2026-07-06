@@ -51,8 +51,8 @@ def test_certificate_context_computes_labels_and_thickness(isolated_modules, sam
 
     context = documents.build_certificate_context(inspection)
 
-    assert context["periodic_inspection_date"] == "6.7.2022"
-    assert context["last_inspection_label"] == "Periodická kontrola (P) 6.7.2022"
+    assert context["periodic_inspection_date"] == "06.07.2022"
+    assert context["last_inspection_label"] == "Periodická kontrola (P) 06.07.2022"
     assert context["shell_thickness_required_measured"] == "5,8 mm / 6,5 mm*"
     assert context["head_thickness_required_measured"] == "6,1 mm / 6,4 mm*"
     assert context["inspection_type_periodic_mark"] == "X"
@@ -74,7 +74,7 @@ def test_certificate_context_without_lookup_match(isolated_modules, sample_paylo
 
     context = documents.build_certificate_context(inspection)
 
-    assert context["last_inspection_label"] == "Medzikontrola (L) 31.1.2024"
+    assert context["last_inspection_label"] == "Medzikontrola (L) 31.01.2024"
     assert context["shell_thickness_required_measured"] == "- / *"
     assert context["head_thickness_required_measured"] == "- / *"
 
