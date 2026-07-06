@@ -142,9 +142,21 @@ def restyle_prvotny():
             rebuild_with_bold_placeholders(paragraph)
             bolded += 1
 
+    # 4. Remove the duplicated supplier capability section (keep the first).
+    removed_tables = 0
+    seen_supplier = False
+    for table in list(document.tables):
+        first_text = table.rows[0].cells[0].text if table.rows else ""
+        if first_text.startswith("Preskúmanie spôsobilosti dodávateľa"):
+            if seen_supplier:
+                table._element.getparent().remove(table._element)
+                removed_tables += 1
+            else:
+                seen_supplier = True
+
     document.save(PRVOTNY_PATH)
     print(f"prvotny: breaks fixed={fixed_breaks}, label swapped={swapped}, "
-          f"paragraphs bolded={bolded}")
+          f"paragraphs bolded={bolded}, duplicate tables removed={removed_tables}")
 
 
 def restyle_osvedcenie():
