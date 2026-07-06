@@ -30,6 +30,50 @@ def test_document_paths_use_readable_safe_filenames(isolated_modules, sample_pay
     assert certificate_path.exists()
 
 
+def test_certificate_context_computes_labels_and_thickness(isolated_modules, sample_payload):
+    from test_lookups import build_lookups_file
+
+    config = isolated_modules["app.config"]
+    documents = isolated_modules["app.services.documents"]
+    build_lookups_file(config.LOOKUPS_XLSX_PATH)
+
+    inspection = Inspection.model_validate({
+        **sample_payload,
+        "id": 7,
+        "created_at": "2026-05-09T12:00:00+00:00",
+        "type_approval_number": "CZ-DU-C 133.01",
+        "tank_code": "L4BH",
+        "periodic_inspection_date": "2022-07-06",
+        "measured_wall_thickness_front_mm": "6,5",
+        "measured_wall_thickness_shell_mm": "6,4",
+    })
+
+    context = documents.build_certificate_context(inspection)
+
+    assert context["periodic_inspection_date"] == "6.7.2022"
+    assert context["last_inspection_label"] == "Periodická kontrola (P) 6.7.2022"
+    assert context["shell_thickness_required_measured"] == "5,8 mm / 6,5 mm*"
+    assert context["head_thickness_required_measured"] == "6,1 mm / 6,4 mm*"
+
+
+def test_certificate_context_without_lookup_match(isolated_modules, sample_payload):
+    documents = isolated_modules["app.services.documents"]
+
+    inspection = Inspection.model_validate({
+        **sample_payload,
+        "id": 8,
+        "created_at": "2026-05-09T12:00:00+00:00",
+        "type_approval_number": "NEZNAME-123",
+        "intermediate_inspection_date": "2024-01-31",
+    })
+
+    context = documents.build_certificate_context(inspection)
+
+    assert context["last_inspection_label"] == "Medzikontrola (L) 31.1.2024"
+    assert context["shell_thickness_required_measured"] == "- / *"
+    assert context["head_thickness_required_measured"] == "- / *"
+
+
 def test_safe_filename_part_has_fallback(isolated_modules):
     documents = isolated_modules["app.services.documents"]
 

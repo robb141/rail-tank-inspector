@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import threading
+from datetime import date
 from pathlib import Path
 
 from docxtpl import DocxTemplate
@@ -13,7 +14,8 @@ from app.config import (
     INITIAL_RECORD_TEMPLATE_PATH,
     ensure_storage_dirs,
 )
-from app.models import Inspection
+from app.models import Inspection, LookupTankType
+from app.services import lookups
 
 
 class PdfConversionUnavailable(RuntimeError):
@@ -61,6 +63,45 @@ INSPECTION_TYPE_LABELS = {
     "intermediate": "Medzikontrola L",
     "exceptional": "Mimoriadna",
 }
+
+
+def format_slovak_date(value: object) -> object:
+    if not value:
+        return value
+    try:
+        parsed = date.fromisoformat(str(value))
+    except ValueError:
+        return value
+    return f"{parsed.day}.{parsed.month}.{parsed.year}"
+
+
+def find_tank_type(inspection: Inspection) -> LookupTankType | None:
+    if not inspection.type_approval_number:
+        return None
+    try:
+        tank_types = lookups.load_lookups().tank_types
+    except Exception:
+        return None
+    candidates = [
+        tank_type
+        for tank_type in tank_types
+        if tank_type.type_approval_number == inspection.type_approval_number
+    ]
+    if not candidates:
+        return None
+    if inspection.tank_code:
+        for candidate in candidates:
+            if candidate.tank_code == inspection.tank_code:
+                return candidate
+    return candidates[0]
+
+
+def format_thickness(required: object, measured: object) -> str:
+    required_text = str(required).replace(".", ",") if required else ""
+    measured_text = str(measured).replace(".", ",") if measured else ""
+    required_part = f"{required_text} mm" if required_text else "-"
+    measured_part = f"{measured_text} mm*" if measured_text else "*"
+    return f"{required_part} / {measured_part}"
 
 
 def without_bar(value: object) -> object:
@@ -112,6 +153,26 @@ def build_certificate_context(inspection: Inspection) -> dict[str, object]:
     ]
     for field in pressure_fields:
         context[field] = without_bar(context.get(field))
+
+    for field in ("periodic_inspection_date", "intermediate_inspection_date"):
+        context[field] = format_slovak_date(context.get(field))
+
+    label_parts = []
+    if context["periodic_inspection_date"]:
+        label_parts.append(f"Periodická kontrola (P) {context['periodic_inspection_date']}")
+    if context["intermediate_inspection_date"]:
+        label_parts.append(f"Medzikontrola (L) {context['intermediate_inspection_date']}")
+    context["last_inspection_label"] = ", ".join(label_parts)
+
+    tank_type = find_tank_type(inspection)
+    context["shell_thickness_required_measured"] = format_thickness(
+        tank_type.shell_thickness if tank_type else None,
+        inspection.measured_wall_thickness_front_mm,
+    )
+    context["head_thickness_required_measured"] = format_thickness(
+        tank_type.head_thickness if tank_type else None,
+        inspection.measured_wall_thickness_shell_mm,
+    )
 
     return context
 

@@ -8,8 +8,8 @@ APP_MODULES = [
     "app.config",
     "app.db.sqlite",
     "app.services.json_storage",
-    "app.services.documents",
     "app.services.lookups",
+    "app.services.documents",
     "app.main",
 ]
 

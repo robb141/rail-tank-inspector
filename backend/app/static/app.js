@@ -117,8 +117,8 @@ const DETAIL_GROUPS = [
     fields: [
       ["utt_protocol_number", "Protokol UTT"],
       ["rubber_protocol_number", "Protokol gum."],
-      ["measured_wall_thickness_front_mm", "Min. hrúbka čelá mm"],
-      ["measured_wall_thickness_shell_mm", "Min. hrúbka luby mm"],
+      ["measured_wall_thickness_front_mm", "Nameraná min. hrúbka čiel [mm]"],
+      ["measured_wall_thickness_shell_mm", "Nameraná min. hrúbka lubov [mm]"],
       ["measuring_device_number", "Č. mer. zariadenia"],
       ["calibration_valid_until", "Kalibrácia do"],
       ["test_duration", "Čas trvania skúšky"],
