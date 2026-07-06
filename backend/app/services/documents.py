@@ -21,6 +21,7 @@ class PdfConversionUnavailable(RuntimeError):
 
 
 PDF_CONVERSION_LOCK = threading.Lock()
+PDF_CONVERSION_TIMEOUT_SECONDS = 120
 
 
 def find_libreoffice_converter() -> str | None:
@@ -142,6 +143,12 @@ def document_stem(inspection: Inspection, document_type: str) -> str:
     return f"{certificate_number}_{tank_identification}_{document_type}_id-{inspection.id}"
 
 
+def delete_generated_documents(inspection_id: int) -> None:
+    ensure_storage_dirs()
+    for path in GENERATED_DIR.glob(f"*_id-{inspection_id}.*"):
+        path.unlink(missing_ok=True)
+
+
 def render_initial_record_docx(inspection: Inspection) -> Path:
     output_path = GENERATED_DIR / f"{document_stem(inspection, 'prvotny-zaznam-z')}.docx"
     return render_docx(INITIAL_RECORD_TEMPLATE_PATH, output_path, inspection)
@@ -177,7 +184,13 @@ def convert_docx_to_pdf(docx_path: Path) -> Path:
                 check=True,
                 capture_output=True,
                 text=True,
+                timeout=PDF_CONVERSION_TIMEOUT_SECONDS,
             )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                "LibreOffice PDF conversion timed out after "
+                f"{PDF_CONVERSION_TIMEOUT_SECONDS} seconds."
+            ) from exc
         except subprocess.CalledProcessError as exc:
             details = (exc.stderr or exc.stdout or str(exc)).strip()
             raise RuntimeError(f"LibreOffice PDF conversion failed: {details}") from exc

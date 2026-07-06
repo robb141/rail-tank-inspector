@@ -22,16 +22,19 @@ from app.models import (
     InspectionImportRequest,
     InspectionImportResponse,
     InspectionResponse,
+    LookupResponse,
 )
 from app.services.documents import (
     PdfConversionUnavailable,
+    delete_generated_documents,
     find_libreoffice_converter,
     render_certificate_docx,
     render_certificate_pdf,
     render_initial_record_docx,
     render_initial_record_pdf,
 )
-from app.services.json_storage import save_inspection_json
+from app.services.json_storage import delete_inspection_json, save_inspection_json
+from app.services.lookups import load_lookups
 
 
 @asynccontextmanager
@@ -52,6 +55,24 @@ def document_url(path: Path | None) -> str | None:
     if path is None:
         return None
     return f"/documents/{path.name}"
+
+
+def build_inspection_response(inspection: Inspection) -> InspectionResponse:
+    json_path = save_inspection_json(inspection)
+    initial_record_docx_path = render_initial_record_docx(inspection)
+
+    certificate_docx_path = None
+    if inspection.result == "pass":
+        certificate_docx_path = render_certificate_docx(inspection)
+
+    return InspectionResponse(
+        inspection=inspection,
+        json_path=str(json_path),
+        initial_record_docx_path=str(initial_record_docx_path),
+        initial_record_docx_url=document_url(initial_record_docx_path),
+        certificate_docx_path=str(certificate_docx_path) if certificate_docx_path else None,
+        certificate_docx_url=document_url(certificate_docx_path),
+    )
 
 
 @app.get("/health")
@@ -76,21 +97,7 @@ def root() -> FileResponse:
 @app.post("/inspections", response_model=InspectionResponse)
 def submit_inspection(payload: InspectionCreate) -> InspectionResponse:
     inspection = create_inspection(payload)
-    json_path = save_inspection_json(inspection)
-    initial_record_docx_path = render_initial_record_docx(inspection)
-
-    certificate_docx_path = None
-    if inspection.result == "pass":
-        certificate_docx_path = render_certificate_docx(inspection)
-
-    return InspectionResponse(
-        inspection=inspection,
-        json_path=str(json_path),
-        initial_record_docx_path=str(initial_record_docx_path),
-        initial_record_docx_url=document_url(initial_record_docx_path),
-        certificate_docx_path=str(certificate_docx_path) if certificate_docx_path else None,
-        certificate_docx_url=document_url(certificate_docx_path),
-    )
+    return build_inspection_response(inspection)
 
 
 @app.put("/inspections/{inspection_id}", response_model=InspectionResponse)
@@ -99,26 +106,19 @@ def replace_inspection(inspection_id: int, payload: InspectionCreate) -> Inspect
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
 
-    json_path = save_inspection_json(inspection)
-    initial_record_docx_path = render_initial_record_docx(inspection)
-
-    certificate_docx_path = None
-    if inspection.result == "pass":
-        certificate_docx_path = render_certificate_docx(inspection)
-
-    return InspectionResponse(
-        inspection=inspection,
-        json_path=str(json_path),
-        initial_record_docx_path=str(initial_record_docx_path),
-        initial_record_docx_url=document_url(initial_record_docx_path),
-        certificate_docx_path=str(certificate_docx_path) if certificate_docx_path else None,
-        certificate_docx_url=document_url(certificate_docx_path),
-    )
+    delete_generated_documents(inspection_id)
+    delete_inspection_json(inspection_id)
+    return build_inspection_response(inspection)
 
 
 @app.get("/inspections", response_model=list[Inspection])
 def read_inspections() -> list[Inspection]:
     return list_inspections()
+
+
+@app.get("/lookups", response_model=LookupResponse)
+def read_lookups() -> LookupResponse:
+    return load_lookups()
 
 
 @app.get("/admin/export", response_model=InspectionExport)
@@ -145,7 +145,7 @@ def read_inspection(inspection_id: int) -> Inspection:
 
 
 @app.post("/inspections/{inspection_id}/certificate")
-def generate_certificate(inspection_id: int) -> dict[str, str]:
+def generate_certificate(inspection_id: int) -> dict[str, str | None]:
     inspection = get_inspection(inspection_id)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
@@ -163,7 +163,7 @@ def generate_certificate(inspection_id: int) -> dict[str, str]:
 
 
 @app.post("/inspections/{inspection_id}/certificate/pdf")
-def generate_certificate_pdf(inspection_id: int) -> dict[str, str]:
+def generate_certificate_pdf(inspection_id: int) -> dict[str, str | None]:
     inspection = get_inspection(inspection_id)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
@@ -187,7 +187,7 @@ def generate_certificate_pdf(inspection_id: int) -> dict[str, str]:
 
 
 @app.post("/inspections/{inspection_id}/initial-record")
-def generate_initial_record(inspection_id: int) -> dict[str, str]:
+def generate_initial_record(inspection_id: int) -> dict[str, str | None]:
     inspection = get_inspection(inspection_id)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
@@ -200,7 +200,7 @@ def generate_initial_record(inspection_id: int) -> dict[str, str]:
 
 
 @app.post("/inspections/{inspection_id}/initial-record/pdf")
-def generate_initial_record_pdf(inspection_id: int) -> dict[str, str]:
+def generate_initial_record_pdf(inspection_id: int) -> dict[str, str | None]:
     inspection = get_inspection(inspection_id)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")

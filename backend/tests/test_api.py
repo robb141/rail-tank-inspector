@@ -29,6 +29,33 @@ def test_submit_update_and_read_inspection(test_client, sample_payload):
     assert read_response.json()["holder_name"] == "Updated Holder"
 
 
+def test_update_removes_stale_generated_documents(test_client, isolated_modules, sample_payload):
+    config = isolated_modules["app.config"]
+
+    create_response = test_client.post("/inspections", json=sample_payload)
+    assert create_response.status_code == 200
+    inspection_id = create_response.json()["inspection"]["id"]
+
+    old_certificate = config.GENERATED_DIR / (
+        f"Z-2026-0001_33-56-7920-123-4_osvedcenie-z_id-{inspection_id}.docx"
+    )
+    assert old_certificate.exists()
+
+    update_response = test_client.put(
+        f"/inspections/{inspection_id}",
+        json={**sample_payload, "certificate_number": "Z/2026 0002", "result": "fail"},
+    )
+    assert update_response.status_code == 200
+
+    generated_names = [path.name for path in config.GENERATED_DIR.iterdir()]
+    assert generated_names == [
+        f"Z-2026-0002_33-56-7920-123-4_prvotny-zaznam-z_id-{inspection_id}.docx"
+    ]
+
+    json_names = [path.name for path in config.JSON_DIR.iterdir()]
+    assert json_names == [f"inspection_{inspection_id}_Z-2026_0002.json"]
+
+
 def test_failing_inspection_cannot_generate_certificate(test_client, sample_payload):
     create_response = test_client.post(
         "/inspections",

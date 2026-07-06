@@ -5,6 +5,12 @@ from app.config import JSON_DIR, ensure_storage_dirs
 from app.models import Inspection
 
 
+def delete_inspection_json(inspection_id: int) -> None:
+    ensure_storage_dirs()
+    for path in JSON_DIR.glob(f"inspection_{inspection_id}_*.json"):
+        path.unlink(missing_ok=True)
+
+
 def save_inspection_json(inspection: Inspection) -> Path:
     ensure_storage_dirs()
     safe_number = inspection.certificate_number.replace("/", "-").replace(" ", "_")

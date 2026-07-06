@@ -9,6 +9,7 @@ APP_MODULES = [
     "app.db.sqlite",
     "app.services.json_storage",
     "app.services.documents",
+    "app.services.lookups",
     "app.main",
 ]
 

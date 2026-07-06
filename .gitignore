@@ -1,11 +1,13 @@
 __pycache__/
 *.py[cod]
+.pytest_cache/
 .DS_Store
 .venv/
 .venv-*/
 .env
 
 backend/data/*.sqlite3
+backend/data/*.xlsx
 backend/data/json/*.json
 backend/data/generated/*.docx
 backend/data/generated/*.pdf

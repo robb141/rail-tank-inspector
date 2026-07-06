@@ -1,7 +1,11 @@
 from datetime import date, datetime, timezone
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+
+ResultValue = Literal["pass", "fail", "not_applicable"]
+InspectionTypeValue = Literal["initial", "periodic", "intermediate", "exceptional"]
 
 
 class InspectionCreate(BaseModel):
@@ -21,26 +25,26 @@ class InspectionCreate(BaseModel):
     last_inspection_date_type: Optional[str] = Field(None, examples=["05/2023 P"])
     periodic_inspection_date: Optional[str] = Field(None, examples=["05/2023"])
     intermediate_inspection_date: Optional[str] = Field(None, examples=["05/2024"])
-    current_inspection_type: Optional[str] = Field(None, examples=["periodic"])
+    current_inspection_type: Optional[InspectionTypeValue] = Field(None, examples=["periodic"])
     test_pressure: Optional[str] = Field(None, examples=["4 bar"])
     working_pressure: Optional[str] = Field(None, examples=["3 bar"])
     calculation_pressure: Optional[str] = Field(None, examples=["4.5 bar"])
     current_test_pressure: Optional[str] = Field(None, examples=["4 bar"])
     safety_valve_pressure: Optional[str] = Field(None, examples=["3.3 bar"])
     vacuum_valve_pressure: Optional[str] = Field(None, examples=["-0.21 bar"])
-    external_inspection_result: Optional[str] = Field(None, examples=["pass"])
-    internal_inspection_result: Optional[str] = Field(None, examples=["pass"])
-    weld_inspection_result: Optional[str] = Field(None, examples=["pass"])
-    plate_inspection_result: Optional[str] = Field(None, examples=["pass"])
-    heating_coils_external_result: Optional[str] = Field(None, examples=["not_applicable"])
-    heating_coils_internal_result: Optional[str] = Field(None, examples=["not_applicable"])
-    side_valves_side_1_result: Optional[str] = Field(None, examples=["pass"])
-    side_valves_side_2_result: Optional[str] = Field(None, examples=["pass"])
-    center_valve_result: Optional[str] = Field(None, examples=["pass"])
-    lid_gasket_result: Optional[str] = Field(None, examples=["pass"])
+    external_inspection_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    internal_inspection_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    weld_inspection_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    plate_inspection_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    heating_coils_external_result: Optional[ResultValue] = Field(None, examples=["not_applicable"])
+    heating_coils_internal_result: Optional[ResultValue] = Field(None, examples=["not_applicable"])
+    side_valves_side_1_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    side_valves_side_2_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    center_valve_result: Optional[ResultValue] = Field(None, examples=["pass"])
+    lid_gasket_result: Optional[ResultValue] = Field(None, examples=["pass"])
     safety_valve_type: Optional[str] = Field(None, examples=["PV-01"])
     safety_valve_number: Optional[str] = Field(None, examples=["PV-12345"])
-    grounding_result: Optional[str] = Field(None, examples=["pass"])
+    grounding_result: Optional[ResultValue] = Field(None, examples=["pass"])
     utt_protocol_number: Optional[str] = Field(None, examples=["UTT-2026-001"])
     rubber_protocol_number: Optional[str] = Field(None, examples=["GUM-2026-001"])
     measured_wall_thickness_front_mm: Optional[str] = Field(None, examples=["6.2"])
@@ -56,7 +60,7 @@ class InspectionCreate(BaseModel):
     inspection_place: str = Field(..., examples=["Bratislava"])
     inspection_date: date = Field(..., examples=["2026-05-08"])
     inspector_name: str = Field(..., examples=["Ing. Ján Kontrolór"])
-    result: str = Field("pass", pattern="^(pass|fail)$", examples=["pass"])
+    result: Literal["pass", "fail"] = Field("pass", examples=["pass"])
     remarks: Optional[str] = Field(None, examples=["Bez zistených nedostatkov."])
     extraordinary_inspection_reason: Optional[str] = Field(None, examples=[""])
     supplier_device_owner: Optional[str] = Field(None, examples=[""])
@@ -109,3 +113,28 @@ class InspectionImportRequest(BaseModel):
 class InspectionImportResponse(BaseModel):
     imported: int
     skipped_duplicates: int
+
+
+class LookupHolder(BaseModel):
+    holder_name: str
+    holder_street: Optional[str] = None
+    holder_postal_code: Optional[str] = None
+    holder_city: Optional[str] = None
+    holder_country: Optional[str] = None
+
+
+class LookupTankType(BaseModel):
+    type_approval_number: str
+    tank_manufacturer_name: Optional[str] = None
+    tank_code: Optional[str] = None
+    shell_thickness: Optional[str] = None
+    head_thickness: Optional[str] = None
+    test_pressure: Optional[str] = None
+    working_pressure: Optional[str] = None
+    calculation_pressure: Optional[str] = None
+    calculation_vacuum: Optional[str] = None
+
+
+class LookupResponse(BaseModel):
+    holders: list[LookupHolder]
+    tank_types: list[LookupTankType]

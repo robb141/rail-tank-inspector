@@ -7,7 +7,7 @@
     <title>Rail Inspect</title>
     <link rel="manifest" href="/static/manifest.webmanifest">
     <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/styles.css?v=15">
+    <link rel="stylesheet" href="/static/styles.css?v=16">
   </head>
   <body>
     <header class="topbar">
@@ -18,35 +18,52 @@
       <div class="status" id="apiStatus">Kontrola spojenia...</div>
     </header>
 
+    <nav class="tabbar">
+      <div class="tabs">
+        <button type="button" class="tab active" id="tabFormButton">Nový záznam</button>
+        <button type="button" class="tab" id="tabRecordsButton">
+          Uložené záznamy
+          <span class="tab-badge hidden" id="queueBadge">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="sync-strip hidden" id="syncStrip">
+      <span id="syncStripText"></span>
+      <button type="button" class="small" id="syncStripButton">Synchronizovať</button>
+    </div>
+
     <main class="layout">
+      <div class="view" id="formView">
       <form id="inspectionForm" class="panel">
         <section>
           <h2>Identifikácia</h2>
           <div class="grid">
             <label>
               Číslo osvedčenia
-              <input name="certificate_number" required value="Z-2026-0001">
+              <input name="certificate_number" required value="">
             </label>
             <label>
               Označenie cisterny
-              <input name="tank_identification" required value="33 56 7920 123-4">
+              <input name="tank_identification" required value="">
             </label>
             <label>
               Miesto skúšky
-              <input name="inspection_place" required value="Bratislava">
+              <input name="inspection_place" required value="">
             </label>
             <label>
               Dátum skúšky
-              <input name="inspection_date" type="date" required value="2026-05-08">
+              <input name="inspection_date" type="date" required value="">
             </label>
             <label>
               Inšpektor
-              <input name="inspector_name" required value="Ing. Ján Kontrolór">
+              <input name="inspector_name" required value="">
             </label>
             <label>
               Výsledok
-              <select name="result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
               </select>
             </label>
@@ -56,8 +73,9 @@
             </label>
             <label>
               Aktuálna skúška
-              <select name="current_inspection_type">
-                <option value="periodic" selected>Periodická P</option>
+              <select name="current_inspection_type" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="periodic">Periodická P</option>
                 <option value="intermediate">Medzikontrola L</option>
                 <option value="initial">Východisková</option>
                 <option value="exceptional">Mimoriadna</option>
@@ -69,25 +87,31 @@
         <section>
           <h2>Držiteľ</h2>
           <div class="grid">
+            <label class="wide picker-label">
+              Vybrať držiteľa zo zoznamu
+              <select id="holderPicker" disabled>
+                <option value="">Zoznam sa načítava...</option>
+              </select>
+            </label>
             <label>
               Držiteľ
-              <input name="holder_name" required value="Rail Tank Services s.r.o.">
+              <input name="holder_name" required value="">
             </label>
             <label>
               Ulica
-              <input name="holder_street" value="Mikovíniho 19">
+              <input name="holder_street" value="">
             </label>
             <label>
               PSČ
-              <input name="holder_postal_code" value="917 02">
+              <input name="holder_postal_code" value="">
             </label>
             <label>
               Mesto
-              <input name="holder_city" value="Trnava">
+              <input name="holder_city" value="">
             </label>
             <label>
               Štát
-              <input name="holder_country" value="Slovenská republika">
+              <input name="holder_country" value="">
             </label>
           </div>
         </section>
@@ -95,29 +119,35 @@
         <section>
           <h2>Cisterna</h2>
           <div class="grid">
+            <label class="wide picker-label">
+              Vybrať typ cisterny zo zoznamu
+              <select id="tankTypePicker" disabled>
+                <option value="">Zoznam sa načítava...</option>
+              </select>
+            </label>
             <label>
               Číslo schválenia typu
-              <input name="type_approval_number" value="E1-ADR-12345">
+              <input name="type_approval_number" value="">
             </label>
             <label>
               Výrobca kotla
-              <input name="tank_manufacturer_name" value="Tatra Vagónka">
+              <input name="tank_manufacturer_name" value="">
             </label>
             <label>
               Číslo kotla
-              <input name="tank_serial_number" value="KOT-98765">
+              <input name="tank_serial_number" value="">
             </label>
             <label>
               Rok výroby
-              <input name="year_of_manufacture" type="number" min="1000" max="2100" value="2018">
+              <input name="year_of_manufacture" type="number" min="1000" max="2100" value="">
             </label>
             <label>
               Tankcode
-              <input name="tank_code" value="L4BH">
+              <input name="tank_code" value="">
             </label>
             <label>
               Objem v litroch
-              <input name="capacity_liters" type="number" min="0" value="85000">
+              <input name="capacity_liters" type="number" min="0" value="">
             </label>
             <label>
               Dátum a druh poslednej skúšky
@@ -139,27 +169,27 @@
           <div class="grid">
             <label>
               Skúšobný tlak
-              <input name="test_pressure" value="4">
+              <input name="test_pressure" value="">
             </label>
             <label>
               Pracovný tlak
-              <input name="working_pressure" value="3">
+              <input name="working_pressure" value="">
             </label>
             <label>
               Výpočtový tlak
-              <input name="calculation_pressure" value="4.5">
+              <input name="calculation_pressure" value="">
             </label>
             <label>
               Aktuálny skúšobný tlak
-              <input name="current_test_pressure" value="4">
+              <input name="current_test_pressure" value="">
             </label>
             <label>
               Pretlak poistného ventilu
-              <input name="safety_valve_pressure" value="3.3">
+              <input name="safety_valve_pressure" value="">
             </label>
             <label>
               Podtlak poistného ventilu
-              <input name="vacuum_valve_pressure" value="-0.21">
+              <input name="vacuum_valve_pressure" value="">
             </label>
             <label>
               Typ poistného ventilu
@@ -177,88 +207,99 @@
           <div class="grid compact-grid">
             <label>
               Vonkajšia prehliadka
-              <select name="external_inspection_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="external_inspection_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Vnútorná prehliadka
-              <select name="internal_inspection_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="internal_inspection_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Kontrola zvarov
-              <select name="weld_inspection_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="weld_inspection_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Kontrola štítkov
-              <select name="plate_inspection_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="plate_inspection_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Vykurovacie hady vonk.
-              <select name="heating_coils_external_result">
-                <option value="not_applicable" selected>Nevzťahuje sa</option>
+              <select name="heating_coils_external_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
                 <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
               </select>
             </label>
             <label>
               Vykurovacie hady vnút.
-              <select name="heating_coils_internal_result">
-                <option value="not_applicable" selected>Nevzťahuje sa</option>
+              <select name="heating_coils_internal_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
                 <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
               </select>
             </label>
             <label>
               Bočné ventily I. str.
-              <select name="side_valves_side_1_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="side_valves_side_1_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Bočné ventily II. str.
-              <select name="side_valves_side_2_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="side_valves_side_2_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Stredový ventil
-              <select name="center_valve_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="center_valve_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Veko + tesnenie
-              <select name="lid_gasket_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="lid_gasket_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Uzemnenie
-              <select name="grounding_result">
-                <option value="pass" selected>Vyhovuje</option>
+              <select name="grounding_result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
                 <option value="not_applicable">Nevzťahuje sa</option>
               </select>
@@ -305,23 +346,23 @@
           <div class="grid">
             <label>
               Ložný tovar
-              <textarea name="cargo_substances">UN 1202, motorová nafta</textarea>
+              <textarea name="cargo_substances"></textarea>
             </label>
             <label>
               Zvláštne ustanovenia
-              <textarea name="special_provisions">TU15, TE22</textarea>
+              <textarea name="special_provisions"></textarea>
             </label>
             <label>
               Orazenie štítka
-              <input name="tank_plate_stamp" value="Z 05/2026">
+              <input name="tank_plate_stamp" value="">
             </label>
             <label>
               Budúca skúška
-              <input name="next_inspection" value="05/2029">
+              <input name="next_inspection" value="">
             </label>
             <label class="wide">
               Poznámky
-              <textarea name="remarks">Bez zistených nedostatkov.</textarea>
+              <textarea name="remarks"></textarea>
             </label>
             <label class="wide">
               Dôvod mimoriadnej kontroly
@@ -370,13 +411,13 @@
           <button type="button" class="secondary hidden" id="cancelEdit">Zrušiť úpravu</button>
           <button type="button" class="secondary" id="clearDraft">Vymazať koncept</button>
         </div>
-      </form>
 
-      <aside class="side">
-        <section class="panel">
-          <h2>Výsledok</h2>
-          <div id="resultBox" class="result muted">Dokumenty sa zobrazia po odoslaní formulára.</div>
-        </section>
+        <div id="resultBox" class="result muted hidden"></div>
+      </form>
+      </div>
+
+      <div class="view hidden" id="recordsView">
+        <div id="recordsMessage" class="result muted hidden"></div>
 
         <section class="panel">
           <div class="section-head">
@@ -410,7 +451,7 @@
           <div id="recentCount" class="list-count">Načítavam...</div>
           <div id="recentList" class="recent muted">Načítavam...</div>
         </section>
-      </aside>
+      </div>
     </main>
 
     <div class="detail-overlay hidden" id="inspectionDetail">
@@ -427,6 +468,6 @@
       </section>
     </div>
 
-    <script src="/static/app.js?v=15"></script>
+    <script src="/static/app.js?v=16"></script>
   </body>
 </html>

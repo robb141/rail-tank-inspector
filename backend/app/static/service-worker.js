@@ -1,9 +1,9 @@
-const CACHE_NAME = "rail-inspect-shell-v15";
+const CACHE_NAME = "rail-inspect-shell-v16";
 const APP_SHELL = [
   "/",
   "/static/index.html",
-  "/static/styles.css?v=15",
-  "/static/app.js?v=15",
+  "/static/styles.css?v=16",
+  "/static/app.js?v=16",
   "/static/manifest.webmanifest",
   "/static/icon.svg",
 ];
@@ -35,6 +35,7 @@ self.addEventListener("fetch", (event) => {
 
   if (
     url.pathname.startsWith("/inspections")
+    || url.pathname.startsWith("/lookups")
     || url.pathname.startsWith("/health")
     || url.pathname.startsWith("/documents")
     || url.pathname.startsWith("/docs")
@@ -47,8 +48,10 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
         return response;
       })
       .catch(() => caches.match(event.request)),

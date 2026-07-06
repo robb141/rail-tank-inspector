@@ -18,9 +18,22 @@ const detailTitle = document.querySelector("#detailTitle");
 const detailSubtitle = document.querySelector("#detailSubtitle");
 const detailContent = document.querySelector("#detailContent");
 const detailActions = document.querySelector("#detailActions");
+const tabFormButton = document.querySelector("#tabFormButton");
+const tabRecordsButton = document.querySelector("#tabRecordsButton");
+const formView = document.querySelector("#formView");
+const recordsView = document.querySelector("#recordsView");
+const queueBadge = document.querySelector("#queueBadge");
+const syncStrip = document.querySelector("#syncStrip");
+const syncStripText = document.querySelector("#syncStripText");
+const syncStripButton = document.querySelector("#syncStripButton");
+const recordsMessage = document.querySelector("#recordsMessage");
+const holderPicker = document.querySelector("#holderPicker");
+const tankTypePicker = document.querySelector("#tankTypePicker");
 
 let recentInspections = [];
 let editingInspectionId = null;
+let lookups = { holders: [], tank_types: [] };
+const LOOKUPS_CACHE_KEY = "rail-inspect-lookups";
 const DB_NAME = "rail-inspect";
 const DB_VERSION = 2;
 const QUEUE_STORE = "pending-inspections";
@@ -299,6 +312,20 @@ function applyFormValues(values) {
   }
 }
 
+function todayIsoDate() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function ensureInspectionDateDefault() {
+  const field = form.elements.namedItem("inspection_date");
+  if (field && !field.value) {
+    field.value = todayIsoDate();
+  }
+}
+
 function debounce(callback, delay) {
   let timeoutId = null;
   return (...args) => {
@@ -436,6 +463,93 @@ function setStatus(ok, text) {
   apiStatus.className = ok ? "status ok" : "status error";
 }
 
+function showTab(name) {
+  const showForm = name === "form";
+  formView.classList.toggle("hidden", !showForm);
+  recordsView.classList.toggle("hidden", showForm);
+  tabFormButton.classList.toggle("active", showForm);
+  tabRecordsButton.classList.toggle("active", !showForm);
+  window.scrollTo({ top: 0 });
+  if (!showForm) {
+    loadRecent();
+    renderQueue();
+  }
+}
+
+function activeMessageBox() {
+  return recordsView.classList.contains("hidden") ? resultBox : recordsMessage;
+}
+
+function queueCountLabel(count) {
+  if (count === 1) {
+    return "1 záznam čaká na synchronizáciu";
+  }
+  if (count >= 2 && count <= 4) {
+    return `${count} záznamy čakajú na synchronizáciu`;
+  }
+  return `${count} záznamov čaká na synchronizáciu`;
+}
+
+function updateQueueIndicators(count) {
+  queueBadge.textContent = String(count);
+  queueBadge.classList.toggle("hidden", count === 0);
+  syncStrip.classList.toggle("hidden", count === 0);
+  syncStripText.textContent = queueCountLabel(count);
+}
+
+function pickerOptionsHtml(labels) {
+  if (labels.length === 0) {
+    return '<option value="">Zoznam nie je k dispozícii</option>';
+  }
+  return '<option value="">— Vybrať zo zoznamu —</option>'
+    + labels.map((label, index) => `<option value="${index}">${escapeHtml(label)}</option>`).join("");
+}
+
+function populateLookupPickers() {
+  const holders = lookups.holders || [];
+  const tankTypes = lookups.tank_types || [];
+
+  holderPicker.disabled = holders.length === 0;
+  holderPicker.innerHTML = pickerOptionsHtml(holders.map((holder) => holder.holder_name));
+
+  tankTypePicker.disabled = tankTypes.length === 0;
+  tankTypePicker.innerHTML = pickerOptionsHtml(tankTypes.map((type) => [
+    type.type_approval_number,
+    type.tank_code,
+    type.tank_manufacturer_name,
+  ].filter(Boolean).join(" · ")));
+}
+
+async function loadLookups() {
+  try {
+    const response = await fetch("/lookups");
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    lookups = await response.json();
+    try {
+      localStorage.setItem(LOOKUPS_CACHE_KEY, JSON.stringify(lookups));
+    } catch {
+      // Storage unavailable; the fresh data is still used for this session.
+    }
+  } catch {
+    try {
+      const cached = localStorage.getItem(LOOKUPS_CACHE_KEY);
+      if (cached) {
+        lookups = JSON.parse(cached);
+      }
+    } catch {
+      // Corrupt cache; keep the empty defaults.
+    }
+  }
+  populateLookupPickers();
+}
+
+function fillFromLookup(values) {
+  applyFormValues(formValuesFromPayload(values));
+  debouncedSaveDraft();
+}
+
 function renderResult(response) {
   const links = [];
   if (response.initial_record_docx_url) {
@@ -459,8 +573,8 @@ function renderResult(response) {
   resultBox.className = "result";
   resultBox.innerHTML = `
     <div class="record">
-      <strong>${response.inspection.certificate_number}</strong>
-      <span>${response.inspection.tank_identification} · ID ${response.inspection.id}</span>
+      <strong>${escapeHtml(response.inspection.certificate_number)}</strong>
+      <span>${escapeHtml(response.inspection.tank_identification)} · ID ${response.inspection.id}</span>
     </div>
     ${links.join("")}
   `;
@@ -534,6 +648,7 @@ async function fetchInspection(inspectionId) {
 
 async function handleLoadInspection(inspectionId) {
   const inspection = await fetchInspection(inspectionId);
+  showTab("form");
   await loadPayloadIntoForm(inspection, "Záznam načítaný ako vzor");
   setEditingInspection(null);
   closeInspectionDetail();
@@ -541,6 +656,7 @@ async function handleLoadInspection(inspectionId) {
 
 async function handleEditInspection(inspectionId) {
   const inspection = await fetchInspection(inspectionId);
+  showTab("form");
   await loadPayloadIntoForm(inspection, "Záznam načítaný na úpravu");
   setEditingInspection(Number(inspectionId));
   closeInspectionDetail();
@@ -561,8 +677,9 @@ async function handleDocumentButton(button) {
       throw new Error("Server nevrátil odkaz na dokument.");
     }
     openDownload(downloadUrl);
-    resultBox.className = "result";
-    resultBox.innerHTML = documentLinksHtml(body);
+    const box = activeMessageBox();
+    box.className = "result";
+    box.innerHTML = documentLinksHtml(body);
   } catch (error) {
     renderError(error.message);
   } finally {
@@ -572,8 +689,9 @@ async function handleDocumentButton(button) {
 }
 
 function renderError(error) {
-  resultBox.className = "result error-text";
-  resultBox.textContent = error;
+  const box = activeMessageBox();
+  box.className = "result error-text";
+  box.textContent = error;
 }
 
 function renderQueued(item) {
@@ -584,7 +702,7 @@ function renderQueued(item) {
   resultBox.innerHTML = `
     <div class="record warning">
       <strong>${escapeHtml(title)}</strong>
-      <span>${item.payload.certificate_number} · ${item.payload.tank_identification}</span>
+      <span>${escapeHtml(item.payload.certificate_number)} · ${escapeHtml(item.payload.tank_identification)}</span>
     </div>
     <div class="muted">Zmena je uložená v tablete a čaká na synchronizáciu.</div>
   `;
@@ -735,6 +853,8 @@ async function renderQueue() {
   try {
     const items = await listQueuedInspections();
     syncQueue.disabled = items.length === 0;
+    syncStripButton.disabled = items.length === 0;
+    updateQueueIndicators(items.length);
     if (items.length === 0) {
       queueList.className = "recent muted";
       queueList.textContent = "Offline fronta je prázdna.";
@@ -856,6 +976,8 @@ async function syncQueuedInspections() {
 
   syncQueue.disabled = true;
   syncQueue.textContent = "Synchronizujem...";
+  syncStripButton.disabled = true;
+  syncStripButton.textContent = "Synchronizujem...";
   let synced = 0;
   let failed = 0;
 
@@ -879,8 +1001,9 @@ async function syncQueuedInspections() {
     }
   }
 
-  resultBox.className = failed === 0 ? "result" : "result error-text";
-  resultBox.textContent = failed === 0
+  const box = activeMessageBox();
+  box.className = failed === 0 ? "result" : "result error-text";
+  box.textContent = failed === 0
     ? `Synchronizované záznamy: ${synced}`
     : `Synchronizované: ${synced}. Zlyhalo: ${failed}.`;
 
@@ -888,6 +1011,7 @@ async function syncQueuedInspections() {
   await loadRecent();
   await checkHealth();
   syncQueue.textContent = "Synchronizovať";
+  syncStripButton.textContent = "Synchronizovať";
 }
 
 form.addEventListener("submit", async (event) => {
@@ -929,6 +1053,7 @@ form.addEventListener("submit", async (event) => {
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = editingInspectionId ? "Uložiť zmeny" : "Vygenerovať dokumenty";
+    resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 });
 
@@ -941,18 +1066,61 @@ cancelEdit.addEventListener("click", async () => {
 
 clearDraft.addEventListener("click", async () => {
   form.reset();
+  ensureInspectionDateDefault();
   setEditingInspection(null);
   await clearSavedDraft();
 });
 
-syncQueue.addEventListener("click", async () => {
+async function handleSyncClick() {
   try {
     await syncQueuedInspections();
   } catch (error) {
     renderError(error.message);
   } finally {
     syncQueue.textContent = "Synchronizovať";
+    syncStripButton.textContent = "Synchronizovať";
   }
+}
+
+syncQueue.addEventListener("click", handleSyncClick);
+syncStripButton.addEventListener("click", handleSyncClick);
+
+tabFormButton.addEventListener("click", () => showTab("form"));
+tabRecordsButton.addEventListener("click", () => showTab("records"));
+
+holderPicker.addEventListener("change", () => {
+  if (holderPicker.value === "") {
+    return;
+  }
+  const holder = (lookups.holders || [])[Number(holderPicker.value)];
+  if (!holder) {
+    return;
+  }
+  fillFromLookup({
+    holder_name: holder.holder_name,
+    holder_street: holder.holder_street,
+    holder_postal_code: holder.holder_postal_code,
+    holder_city: holder.holder_city,
+    holder_country: holder.holder_country,
+  });
+});
+
+tankTypePicker.addEventListener("change", () => {
+  if (tankTypePicker.value === "") {
+    return;
+  }
+  const tankType = (lookups.tank_types || [])[Number(tankTypePicker.value)];
+  if (!tankType) {
+    return;
+  }
+  fillFromLookup({
+    type_approval_number: tankType.type_approval_number,
+    tank_manufacturer_name: tankType.tank_manufacturer_name,
+    tank_code: tankType.tank_code,
+    test_pressure: tankType.test_pressure,
+    working_pressure: tankType.working_pressure,
+    calculation_pressure: tankType.calculation_pressure,
+  });
 });
 
 recentSearch.addEventListener("input", () => renderRecent(recentInspections));
@@ -973,6 +1141,7 @@ queueList.addEventListener("click", async (event) => {
     }
 
     if (button.dataset.queueAction === "edit") {
+      showTab("form");
       await loadPayloadIntoForm(item.payload, "Offline záznam načítaný do formulára");
       setEditingInspection((item.operation || "create") === "update" ? item.inspectionId : null);
       await deleteQueuedInspection(item.localId);
@@ -980,8 +1149,8 @@ queueList.addEventListener("click", async (event) => {
 
     if (button.dataset.queueAction === "delete") {
       await deleteQueuedInspection(item.localId);
-      resultBox.className = "result muted";
-      resultBox.textContent = "Offline záznam bol vymazaný.";
+      recordsMessage.className = "result muted";
+      recordsMessage.textContent = "Offline záznam bol vymazaný.";
     }
 
     await renderQueue();
@@ -1073,6 +1242,7 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("online", () => {
   setStatus(true, "Sieť dostupná");
   syncQueuedInspections();
+  loadLookups();
 });
 
 window.addEventListener("offline", () => {
@@ -1120,9 +1290,12 @@ async function boot() {
     draftStatus.textContent = `Koncept sa nepodarilo načítať: ${error.message}`;
   }
 
+  ensureInspectionDateDefault();
+
   checkHealth();
   loadRecent();
   renderQueue();
+  loadLookups();
 }
 
 boot();

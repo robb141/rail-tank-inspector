@@ -136,11 +136,22 @@ http://127.0.0.1:8000
 The browser form now has a small IndexedDB-backed offline queue and a PWA app
 shell.
 
+The UI is split into two tabs:
+
+- `Nový záznam` shows only the inspection form; document links appear under
+  the submit button after saving.
+- `Uložené záznamy` shows the offline queue and the saved inspection history.
+
+When offline records are waiting to sync, a yellow strip under the tabs shows
+the pending count with a `Synchronizovať` button, and the `Uložené záznamy`
+tab shows a badge with the same number.
+
 Basic behavior:
 
 - If the backend is online, the form submits directly to `POST /inspections`.
 - If the backend cannot be reached, the inspection is saved locally in the browser.
-- Pending offline inspections appear in the `Offline fronta` panel.
+- Pending offline inspections appear in the `Offline fronta` panel on the
+  `Uložené záznamy` tab.
 - Click `Synchronizovať` after the backend is available again.
 - The app also attempts to sync automatically when the browser reports that the
   network is online.
@@ -161,6 +172,43 @@ To test it:
 To test draft autosave, change a field, refresh the browser, and confirm the
 edited value is restored.
 
+## Lookup Lists From Excel
+
+The form has two helper dropdowns fed by an Excel file:
+
+- `Vybrať držiteľa zo zoznamu` autofills Držiteľ, Ulica, PSČ, Mesto, and Štát.
+- `Vybrať typ cisterny zo zoznamu` autofills Číslo schválenia typu, Výrobca
+  kotla, Tankcode, Skúšobný tlak, Pracovný tlak, and Výpočtový tlak.
+
+All autofilled fields stay editable; the dropdown only pre-fills them.
+
+The backend reads the file on every `GET /lookups` request from:
+
+```text
+backend/data/lookups.xlsx        # local run
+/app/data/lookups.xlsx           # inside Docker (mounted volume)
+```
+
+You can add/remove rows in the Excel anytime without redeploying the app —
+the next page load (or reconnect) picks up the changes. The path can be
+overridden with the `RAIL_INSPECT_LOOKUPS_XLSX` environment variable.
+
+Expected workbook layout (matching `01_TABULKA NA VYPLNENIE.xlsx`):
+
+- A sheet whose name contains `Drzitel`/`Držiteľ` with header columns
+  `Žiadateľ / Držiteľ`, `Ulica`, `PSČ`, `Mesto`, `Štát`.
+- A sheet whose name contains `cistern` with header columns
+  `Číslo schválenia typu`, `Názov výrobcu`, `Kód cisterny`,
+  `Hrúbka steny cisterny`, `Hrúbka steny dien`, `Skúšobný tlak`,
+  `Najvyšší dovolený pracovný tlak`, `Výpočtový pretlak`, `Výpočtový podtlak`.
+
+The header row is found automatically (it does not need to be the first row),
+and rows with an empty first column are skipped. If the file is missing, the
+dropdowns are simply disabled.
+
+The browser caches the last loaded lists in `localStorage`, so the dropdowns
+keep working offline; they refresh automatically when the network returns.
+
 ## Checklist Fields
 
 The tablet form and backend model now include the first expanded set of
@@ -179,7 +227,8 @@ These fields are stored in SQLite/JSON and wired into the first pass of the
 
 ## Manual Document Reprint
 
-The `Posledné záznamy` panel includes document buttons for saved inspections:
+The `Posledné záznamy` panel on the `Uložené záznamy` tab includes document
+buttons for saved inspections:
 
 - Search/filter controls let you narrow saved inspections by certificate number,
   tank ID, holder, place, date, inspector, and pass/fail result.
@@ -330,12 +379,9 @@ The tests use a temporary data folder created by pytest, so they do not touch
 your real `backend/data/rail_inspections.sqlite3`, generated DOCX/PDF files, or
 JSON archive.
 
-From Docker, run tests inside a one-off container:
-
-```bash
-docker compose build
-docker compose run --rm rail-inspect sh -c "python -m pip install --user -r requirements-dev.txt && python -m pytest"
-```
+The Docker image no longer contains the test suite; run tests from a local
+virtualenv as shown above. CI also runs the full suite on every push and pull
+request before the Docker image is built and published.
 
 ## Docker
 
