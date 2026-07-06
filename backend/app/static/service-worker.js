@@ -1,9 +1,9 @@
-const CACHE_NAME = "rail-inspect-shell-v16";
+const CACHE_NAME = "rail-inspect-shell-v17";
 const APP_SHELL = [
   "/",
   "/static/index.html",
-  "/static/styles.css?v=16",
-  "/static/app.js?v=16",
+  "/static/styles.css?v=17",
+  "/static/app.js?v=17",
   "/static/manifest.webmanifest",
   "/static/icon.svg",
 ];

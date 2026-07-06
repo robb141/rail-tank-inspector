@@ -1032,6 +1032,8 @@ form.addEventListener("submit", async (event) => {
       : await submitPayload(payload);
     await clearSavedDraft();
     setEditingInspection(null);
+    form.reset();
+    ensureInspectionDateDefault();
     renderResult(body);
     await loadRecent();
   } catch (error) {
@@ -1044,6 +1046,8 @@ form.addEventListener("submit", async (event) => {
       );
       await clearSavedDraft();
       setEditingInspection(null);
+      form.reset();
+      ensureInspectionDateDefault();
       renderQueued(queued);
       await renderQueue();
       await checkHealth();
