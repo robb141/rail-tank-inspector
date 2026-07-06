@@ -142,6 +142,10 @@ def build_certificate_context(inspection: Inspection) -> dict[str, object]:
         inspection_type,
         inspection_type or "",
     )
+    for type_key in INSPECTION_TYPE_LABELS:
+        context[f"inspection_type_{type_key}_mark"] = (
+            "X" if inspection_type == type_key else ""
+        )
 
     pressure_fields = [
         "test_pressure",
