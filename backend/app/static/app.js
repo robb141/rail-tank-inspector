@@ -53,13 +53,10 @@ const DETAIL_GROUPS = [
     title: "Identifikácia",
     fields: [
       ["certificate_number", "Číslo osvedčenia"],
-      ["order_number", "Č. zákazky / objednávky"],
       ["tank_identification", "Označenie cisterny"],
       ["inspection_place", "Miesto skúšky"],
       ["inspection_date", "Dátum skúšky"],
       ["inspector_name", "Inšpektor"],
-      ["result", "Výsledok"],
-      ["current_inspection_type", "Aktuálna skúška"],
     ],
   },
   {
@@ -81,7 +78,6 @@ const DETAIL_GROUPS = [
       ["year_of_manufacture", "Rok výroby"],
       ["tank_code", "Tankcode"],
       ["capacity_liters", "Objem v litroch"],
-      ["last_inspection_date_type", "Dátum a druh poslednej skúšky"],
       ["periodic_inspection_date", "P"],
       ["intermediate_inspection_date", "L"],
     ],
@@ -102,6 +98,7 @@ const DETAIL_GROUPS = [
   {
     title: "Kontroly",
     fields: [
+      ["current_inspection_type", "Aktuálna skúška"],
       ["external_inspection_result", "Vonkajšia prehliadka"],
       ["internal_inspection_result", "Vnútorná prehliadka"],
       ["weld_inspection_result", "Kontrola zvarov"],
@@ -148,6 +145,12 @@ const DETAIL_GROUPS = [
       ["supplier_calibration_company", "Kalibračná spoločnosť"],
       ["supplier_snas_registration_number", "Registračné číslo SNAS"],
       ["supplier_other_findings", "Iné zistenia"],
+    ],
+  },
+  {
+    title: "Výsledok skúšky",
+    fields: [
+      ["result", "Výsledok"],
     ],
   },
 ];
@@ -381,8 +384,6 @@ function payloadFromForm() {
     year_of_manufacture: optionalNumber(data.get("year_of_manufacture")),
     tank_identification: data.get("tank_identification").trim(),
     tank_code: optionalString(data.get("tank_code")),
-    order_number: optionalString(data.get("order_number")),
-    last_inspection_date_type: optionalString(data.get("last_inspection_date_type")),
     periodic_inspection_date: optionalString(data.get("periodic_inspection_date")),
     intermediate_inspection_date: optionalString(data.get("intermediate_inspection_date")),
     current_inspection_type: optionalString(data.get("current_inspection_type")),

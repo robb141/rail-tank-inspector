@@ -7,13 +7,13 @@
     <title>Rail Inspect</title>
     <link rel="manifest" href="/static/manifest.webmanifest">
     <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/styles.css?v=18">
+    <link rel="stylesheet" href="/static/styles.css?v=19">
   </head>
   <body>
     <header class="topbar">
       <div>
         <h1>Rail Inspect</h1>
-        <p>Prvotný záznam Z a osvedčenie o skúške Z</p>
+        <p>Prvotný záznam Z a osvedčenie o skúške Z · verzia 19</p>
       </div>
       <div class="status" id="apiStatus">Kontrola spojenia...</div>
     </header>
@@ -58,28 +58,6 @@
             <label>
               Inšpektor
               <input name="inspector_name" required value="">
-            </label>
-            <label>
-              Výsledok
-              <select name="result" required>
-                <option value="" selected disabled>— Vybrať —</option>
-                <option value="pass">Vyhovuje</option>
-                <option value="fail">Nevyhovuje</option>
-              </select>
-            </label>
-            <label>
-              Č. zákazky / objednávky
-              <input name="order_number" value="">
-            </label>
-            <label>
-              Aktuálna skúška
-              <select name="current_inspection_type" required>
-                <option value="" selected disabled>— Vybrať —</option>
-                <option value="periodic">Periodická P</option>
-                <option value="intermediate">Medzikontrola L</option>
-                <option value="initial">Východisková</option>
-                <option value="exceptional">Mimoriadna</option>
-              </select>
             </label>
           </div>
         </section>
@@ -150,16 +128,12 @@
               <input name="capacity_liters" type="number" min="0" value="">
             </label>
             <label>
-              Dátum a druh poslednej skúšky
-              <input name="last_inspection_date_type" value="">
-            </label>
-            <label>
               P
-              <input name="periodic_inspection_date" value="">
+              <input name="periodic_inspection_date" type="date" value="">
             </label>
             <label>
               L
-              <input name="intermediate_inspection_date" value="">
+              <input name="intermediate_inspection_date" type="date" value="">
             </label>
           </div>
         </section>
@@ -206,6 +180,16 @@
           <h2>Kontroly</h2>
           <div class="grid compact-grid">
             <label>
+              Aktuálna skúška
+              <select name="current_inspection_type" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="periodic">Periodická P</option>
+                <option value="intermediate">Medzikontrola L</option>
+                <option value="initial">Východisková</option>
+                <option value="exceptional">Mimoriadna</option>
+              </select>
+            </label>
+            <label>
               Vonkajšia prehliadka
               <select name="external_inspection_result" required>
                 <option value="" selected disabled>— Vybrať —</option>
@@ -245,18 +229,18 @@
               Vykurovacie hady vonk.
               <select name="heating_coils_external_result" required>
                 <option value="" selected disabled>— Vybrať —</option>
-                <option value="not_applicable">Nevzťahuje sa</option>
                 <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
               Vykurovacie hady vnút.
               <select name="heating_coils_internal_result" required>
                 <option value="" selected disabled>— Vybrať —</option>
-                <option value="not_applicable">Nevzťahuje sa</option>
                 <option value="pass">Vyhovuje</option>
                 <option value="fail">Nevyhovuje</option>
+                <option value="not_applicable">Nevzťahuje sa</option>
               </select>
             </label>
             <label>
@@ -405,6 +389,20 @@
           </div>
         </section>
 
+        <section>
+          <h2>Výsledok skúšky</h2>
+          <div class="grid">
+            <label>
+              Výsledok
+              <select name="result" required>
+                <option value="" selected disabled>— Vybrať —</option>
+                <option value="pass">Vyhovuje</option>
+                <option value="fail">Nevyhovuje</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
         <div class="actions">
           <span class="draft-status" id="draftStatus">Koncept pripravený</span>
           <button type="submit" id="submitInspection">Vygenerovať dokumenty</button>
@@ -468,6 +466,6 @@
       </section>
     </div>
 
-    <script src="/static/app.js?v=18"></script>
+    <script src="/static/app.js?v=19"></script>
   </body>
 </html>
