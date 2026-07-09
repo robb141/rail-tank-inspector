@@ -161,6 +161,59 @@ environment:
 
 LibreOffice is installed inside the Docker image.
 
+## Automatic Updates On Synology
+
+Container Manager never re-pulls `latest` on its own. The NAS project uses
+Watchtower to do it automatically. Full compose used on the NAS:
+
+```yaml
+services:
+  rail-inspect:
+    image: ghcr.io/robb141/railinspect:latest
+    container_name: rail-inspect
+    ports:
+      - "8000:8000"
+    environment:
+      RAIL_INSPECT_DATA_DIR: /app/data
+      LIBREOFFICE_PATH: /usr/bin/libreoffice
+    volumes:
+      - /volume1/docker/rail-inspect/data:/app/data
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"        # delete old images
+      WATCHTOWER_POLL_INTERVAL: "3600"  # check every hour
+    command: rail-inspect               # watch only this container
+```
+
+How a release flows:
+
+1. Push to `main` on GitHub.
+2. CI runs the test suite; only if it passes, the ARM64 image is built and
+   published to `ghcr.io/robb141/railinspect:latest` (about 6 minutes).
+3. Watchtower on the NAS notices the new image within the hour, pulls it,
+   and recreates the container (a few seconds of downtime).
+4. Tablets pick up the new frontend on the next page refresh or app reopen.
+
+Things to know:
+
+- Every push to `main` becomes production at the next Watchtower check.
+- Data is safe across updates: SQLite, JSON, generated documents, and
+  `lookups.xlsx` live on the mounted `/app/data` volume.
+- A submission during the restart lands in the tablet offline queue and
+  syncs right after.
+- The app header shows the running frontend version (`verzia N`), which is
+  the quickest way to confirm what a device or the server is running.
+- For an immediate update without waiting for the poll interval, use
+  Container Manager -> Project -> Action -> Build, or over SSH:
+  `cd /volume1/docker/rail-inspect && docker compose pull && docker compose up -d`.
+
 ## Health Checks
 
 Backend:
