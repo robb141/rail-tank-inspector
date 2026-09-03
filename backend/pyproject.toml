@@ -1,0 +1,5 @@
+[project]
+name = "railinspect-backend"
+version = "0.1.0"
+description = "Backend API for the Rail Inspect MVP."
+requires-python = ">=3.12,<3.13"

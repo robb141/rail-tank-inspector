@@ -45,7 +45,10 @@ railInspect/
 
 Use Python 3.12 for this MVP. Python 3.14 can force packages such as
 `pydantic-core` to build from source, which is the error you saw from
-`maturin`.
+`maturin`. This is now pinned by `backend/.python-version` and the
+`requires-python` field in `backend/pyproject.toml`, so tools like pyenv
+and uv select 3.12 automatically and `pip` refuses to install under a
+wrong version.
 
 ```bash
 cd backend
